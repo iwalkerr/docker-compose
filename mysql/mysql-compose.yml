@@ -1,0 +1,84 @@
+### 创建./mysql目录
+### mysql -h172.18.108.91 -P13306 -uroot -p123456
+
+### 读写分离配置
+### 1. 登陆master 
+### mysql -h172.18.108.91 -P13306 -uroot -p123456
+### CREATE USER 'reader'@'%' IDENTIFIED WITH mysql_native_password BY 'reader';
+### GRANT REPLICATION SLAVE ON *.* TO 'reader'@'%';
+### flush privileges;
+### 
+### show master status;     ====>   查看File 字段值 mysql-bin.000004
+### 
+### 
+### 
+### 2. 登陆slave
+### mysql -h172.18.108.91 -P23306 -uroot -p123456
+
+### show variables like 'server_id';
+### set global server_id=2; 
+
+### change master to master_host='172.18.108.91',master_user='reader',master_password='reader',master_port=13306,master_log_file='mysql-bin.000004',master_log_pos=0;
+### start slave;
+### show slave status\G;    ====>   查看Slave_IO_Running 和 Slave_SQL_Running 是否都为Yes
+### 
+### create database test default character set utf8;
+### show databases;
+
+version: '3'
+services:
+  mysql8-node1:
+    restart: always
+    image: mysql
+    container_name: mysql8_1
+    volumes:
+      - ./mysql8_1/conf.d:/etc/mysql/conf.d
+      - ./mysql8_1/data:/var/lib/mysql
+    ports:
+      - 13306:3306
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: '-dfdff*&e123456@'
+    command: 
+      --default-authentication-plugin=mysql_native_password 
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --explicit_defaults_for_timestamp=true
+      --lower-case-table-names=1
+    networks:
+      - shanhy-ci
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+
+  mysql8-node2:
+      restart: always
+      image: mysql
+      container_name: mysql8_2
+      volumes:
+        - ./mysql8_2/conf.d:/etc/mysql/conf.d
+        - ./mysql8_2/data:/var/lib/mysql
+      ports:
+        - 23306:3306
+      environment:
+        TZ: Asia/Shanghai
+        MYSQL_ROOT_PASSWORD: '-dfdff*&e123456@'
+      command: 
+        --default-authentication-plugin=mysql_native_password 
+        --character-set-server=utf8mb4
+        --collation-server=utf8mb4_general_ci
+        --explicit_defaults_for_timestamp=true
+        --lower-case-table-names=1
+      networks:
+        - shanhy-ci
+      logging:
+        driver: "json-file"
+        options:
+          max-size: "200k"
+          max-file: "10"
+
+networks:
+  shanhy-ci:
+    driver: bridge

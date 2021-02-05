@@ -1,0 +1,6 @@
+mongodb/db
+mongodb/log
+mysql/mysql8_1
+mysql/mysql8_2
+rabbitmq/rabbitmq
+redis/data
